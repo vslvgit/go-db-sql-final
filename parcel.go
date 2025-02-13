@@ -2,7 +2,6 @@ package main
 
 import (
 	"database/sql"
-	"fmt"
 )
 
 type ParcelStore struct {
@@ -56,6 +55,8 @@ func (s ParcelStore) GetByClient(client int) ([]Parcel, error) {
 		return nil, err
 	}
 
+	defer rows.Close()
+
 	var parcels []Parcel
 
 	for rows.Next() {
@@ -89,25 +90,9 @@ func (s ParcelStore) SetStatus(number int, status string) error {
 func (s ParcelStore) SetAddress(number int, address string) error {
 	// реализуйте обновление адреса в таблице parcel
 	// менять адрес можно только если значение статуса registered
-	var status string
-	err := s.db.QueryRow(
-		"SELECT status FROM parcel WHERE number = :number",
-		sql.Named("number", number),
-	).Scan(&status)
 
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return fmt.Errorf("посылка с номером %d не найдена", number)
-		}
-		return err
-	}
-
-	if status != ParcelStatusRegistered {
-		return fmt.Errorf("можно менять адрес только если статус 'registered'")
-	}
-
-	_, err = s.db.Exec(
-		"UPDATE parcel SET address = :address WHERE number = :number",
+	_, err := s.db.Exec(
+		"UPDATE parcel SET address = :address WHERE number = :number AND created_at != registered'",
 		sql.Named("address", address), sql.Named("number", number),
 	)
 
@@ -121,18 +106,7 @@ func (s ParcelStore) SetAddress(number int, address string) error {
 func (s ParcelStore) Delete(number int) error {
 	// реализуйте удаление строки из таблицы parcel
 	// удалять строку можно только если значение статуса registered
-	var status string
-	err := s.db.QueryRow("SELECT status FROM parcel WHERE number = :number", sql.Named("number", number)).Scan(&status)
-
-	if err != nil {
-		return fmt.Errorf("ошибка при проверке статуса: %w", err)
-	}
-
-	if status != ParcelStatusRegistered {
-		return fmt.Errorf("можно удалять только посылки со статусом registered")
-	}
-
-	_, err = s.db.Exec("DELETE FROM parcel WHERE number = :number", sql.Named("number", number))
+	_, err := s.db.Exec("DELETE FROM parcel WHERE number = :number AND created_at != registered'", sql.Named("number", number))
 
 	if err != nil {
 

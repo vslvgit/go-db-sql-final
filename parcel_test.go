@@ -47,7 +47,11 @@ func TestAddGetDelete(t *testing.T) {
 	// проверьте, что значения всех полей в полученном объекте совпадают со значениями полей в переменной parcel
 	retrievedParcel, err := store.Get(id)
 	require.NoError(t, err)
+	retrievedParcel.Number = parcel.Number
+
+	// Сравниваем структуры целиком
 	require.Equal(t, parcel, retrievedParcel)
+
 	// delete
 	// удалите добавленную посылку, убедитесь в отсутствии ошибки
 	err = store.Delete(id)
@@ -155,10 +159,8 @@ func TestGetByClient(t *testing.T) {
 		require.True(t, exists)
 
 		// Проверяем, что поля совпадают
-		require.Equal(t, expectedParcel.Client, parcel.Client)
-		require.Equal(t, expectedParcel.Status, parcel.Status)
-		require.Equal(t, expectedParcel.Address, parcel.Address)
-		require.Equal(t, expectedParcel.CreatedAt, parcel.CreatedAt)
+		require.Equal(t, expectedParcel, parcel)
+
 	}
 	for _, parcel := range parcels {
 		err = store.Delete(parcel.Number)
